@@ -13,7 +13,10 @@ app.post("/signup", async (req, res) => {
 
     console.log(req.body)
 
- 
+    const user = new User(req.body);
+
+
+
 
     try {
         await user.save();
@@ -26,11 +29,44 @@ app.post("/signup", async (req, res) => {
     } catch (err) {
 
 
-        res.statusCode(400).send("Error saving the usder:" + err.message);
+        res.statusCode(400).send("Error saving the user:" + err.message);
 
     }
 
 });
+
+
+
+//Get user by eamil
+
+
+app.get("/user", async (req, res) => {
+
+    const userEmail = req.body.eamilId;
+
+
+
+    try {
+
+        const user = await User.find({ emailId: userEmail });
+
+        res.send(user);
+    }
+    catch (err) {
+
+        res.status(400).send("something went wrong")
+    }
+
+});
+
+//Feed API-GET/fedd-get all the users from the database
+
+app.get("/feed", (req, res) => {
+
+
+
+});
+
 
 
 connectDB().then(() => {
