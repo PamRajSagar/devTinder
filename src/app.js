@@ -4,7 +4,13 @@ const connectDB = require("./config/database");
 
 const app = express();
 
-const User = require("./models/user")
+const User = require("./models/user");
+
+const { validateSignUpData } = require("./utils/validation");
+
+const bcrypt = require("bcrypt"); ``
+
+
 
 
 app.use(express.json());
@@ -15,9 +21,20 @@ app.use(express.json());
 
 app.post("/signup", async (req, res) => {
 
-    console.log(req.body)
+    //validation of data
+    validateSignUpData(req);
 
-    const user = new User(req.body);
+    //Encrypt the password
+
+    const { firstName, lastName, emailId, password } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    //creating a new instance of the user model
+    const user = new User({
+        firstName, lastName, emailId, password: passwordHash
+    });
 
 
     try {
@@ -31,7 +48,7 @@ app.post("/signup", async (req, res) => {
     } catch (err) {
 
 
-        res.statusCode(400).send("Error saving the user:" + err.message);
+        res.statusCode(400).send("Error :" + err.message);
 
     }
 
@@ -40,7 +57,39 @@ app.post("/signup", async (req, res) => {
 //getting data form databse
 //Get user by eamil
 
+//login api usimg email and password
 
+app.post("/login", async (req, res) => {
+
+
+    try {
+
+        const { emailId, password } = req.body;
+
+        const user = await User.findOne({ emailId: emailId });
+
+        if (!user) {
+
+            throw new Error("Invalid credentials");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (isPasswordValid) {
+
+            res.send("Login Successfully");
+        }
+        else {
+
+            throw new Error("Invalid credentials")
+        }
+
+    } catch (err) {
+
+        res.status(400).send("Error:" + err.message)
+
+    }
+})
 
 
 app.get("/user", async (req, res) => {
@@ -63,7 +112,7 @@ app.get("/user", async (req, res) => {
     }
     catch (err) {
 
-        res.status(400).send("something went wrong")
+        res.status(400).send("Error:" + err.message)
     }
 
 });
@@ -83,7 +132,7 @@ app.get("/feed", async (req, res) => {
     } catch (error) {
 
 
-        res.status(400).send("something went wrong");
+        res.status(400).send("Error:" + err.message)
 
     }
 
@@ -105,7 +154,7 @@ app.delete("/user", async (req, res) => {
     }
     catch (err) {
 
-        res.status(400).send("something went wrong");
+        res.status(400).send("Error:" + err.message)
 
 
 
@@ -126,7 +175,7 @@ app.patch("/user/:userId", async (req, res) => {
     try {
 
 
-        const ALLOWED_UPDATES = [ "photoUrl", "about", "gender", "age", "skills"];
+        const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
 
 
         const isUpdateAllowed = Object.keys(data).every((k) => ALLOWED_UPDATES.includes(k));
@@ -137,7 +186,7 @@ app.patch("/user/:userId", async (req, res) => {
             throw new Error("update not allowed");
         }
 
-        if(data?.skills.length>10){
+        if (data?.skills.length > 10) {
 
             throw new Error("Skills cannot be more than 10")
         };
