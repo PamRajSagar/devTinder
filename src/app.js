@@ -8,12 +8,17 @@ const User = require("./models/user");
 
 const { validateSignUpData } = require("./utils/validation");
 
-const bcrypt = require("bcrypt"); ``
+const bcrypt = require("bcrypt");
 
+const cookieParser = require("cookie-parser");
+
+const jwt = require("jsonwebtoken");
 
 
 
 app.use(express.json());
+
+app.use(cookieParser());
 
 
 
@@ -77,6 +82,16 @@ app.post("/login", async (req, res) => {
 
         if (isPasswordValid) {
 
+            //create a JWT token .
+            //Add the token to cookie and send the response back to the user
+
+            const token = await jwt.sign({ _id: user._id }, "DEV@TINDER$790");
+            console.log(token);
+
+            //Add the token to cookie and send the response back to the user
+
+            res.cookie("token", token)
+
             res.send("Login Successfully");
         }
         else {
@@ -90,6 +105,55 @@ app.post("/login", async (req, res) => {
 
     }
 })
+
+
+app.get("/profile", async (req, res) => {
+
+
+    try {
+        const cookies = req.cookies;
+
+        const { token } = cookies;
+
+        //if we didnot get an token
+
+        if (!token) {
+
+            throw new Err
+            or("invalid token");
+        }
+
+        //validate my token
+
+        const decodedMessage = await jwt.verify(token, "DEV@TINDER$790");
+
+        console.log(decodedMessage);
+
+        const { _id } = decodedMessage;
+        console.log("logged in user is:" + _id);
+
+
+        const user = await User.findById(_id);
+
+
+        if (!user) {
+
+            throw new Error("user doesnot exit")
+        }
+        res.send(user);
+
+        console.log(cookies);
+
+        res.send("Reading cookies")
+    }
+    catch (err) {
+
+        res.status(400).send("Error:" + err.message)
+    }
+})
+
+
+
 
 
 app.get("/user", async (req, res) => {
